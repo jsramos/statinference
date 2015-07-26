@@ -1,0 +1,186 @@
+---
+title: 'Statistical Inference Project 2: Hypothesis Testing on Tooth Growth Data'
+aut hor: "J. Ramos"
+date: "Saturday, July 25, 2015"
+output: pdf_document
+---
+
+# Overview
+This study aims to perform hypothesis testing on the ToothGrow dataset, and explore the effects of different Vitamin C supplements and their dosage on the growth of odontoblasts in 10 guinea pigs.
+
+The delivery vehicles of the supplements are Vitamin C and direct Ascorbic Acid, and the dosages are 0.5, 1 and 2 milligrams.
+
+The objective of the study is as follows:
+
+1. Load data and perform exploratory analysis highlighting basic features of the data.
+2. Perform hypothesis testing for the effect of dosages and types of supplement.
+3. Correctly interpret the result of these tests. 
+4. Clearly establish the assumptions of these tests.
+
+# Descriptive and Exploratory Analysis
+
+Before doing any descriptive plot, we need to load the data and clean it. Fortunately, this dataset is already in the appropriate form for plotting, and the only thing that remains is assigning human-readable column names. We'll also fuse together supplement and dose conlumns in an extra column just for exploration purposes.
+
+```{r, message=FALSE}
+# Load datasets and relevant libraries
+library(datasets)
+library(dplyr)
+library(ggplot2)
+library(stargazer)
+library(grid)
+library(gridExtra)
+
+# Load ToothGrowth data
+data(ToothGrowth)
+
+# Cleaning data: assign descriptive and human-readable columns
+# Also create an extra column for exploration purposes
+names(ToothGrowth) <- c('Length','SupplementType','Dose')
+ToothGrowth <- ToothGrowth %>% 
+    mutate(SupplementTypeDose=paste(SupplementType,'-',Dose, sep = ''))
+```
+
+We'll now overview the data by obtaining a contingency table with the means for each combination of treatment.
+
+```{r, results='asis',warning=FALSE}
+stargazer(format(xtabs(Length~SupplementType+Dose, data=ToothGrowth), 
+                 quote=F, justify='right', ), type='latex',header=F,
+          title='OJ - Orage Juice, VC - Vitamin C. Doses in mg')
+```
+
+As we can see in Table 1, the therapy with the most tooth growth is 2 milligrams of Ascorbic Acid, followed closely by 2 milligrams contained in Orange Juice. However, the greatest change from smaller to larger doses can be attributed to orange juice. Because of these mixed signals in the data, we need to further explore it to confirm this relationship by examining the distributions of lengths for each combination of treatment. 
+
+```{r, results='asis',warning=FALSE, fig.width=12,fig.height=15}
+# Plot distributions
+p <- ggplot(data=ToothGrowth, aes(x=ToothGrowth$Length)) + 
+    ggtitle('Distribution of length of tooth growth') +
+    xlab('Length of growth') +
+    geom_histogram(aes(y=..density..), color='black',
+                   fill='grey', alpha=.5, binwidth=1) +
+    geom_density() + 
+    geom_text(aes(x=14,y=.08, 
+                  label=paste('mean=',round(
+                      mean(ToothGrowth$Length),2),sep = ''))) +
+    geom_vline(linetype=2, xintercept=mean(ToothGrowth$Length))
+
+q <- ggplot(data=ToothGrowth, aes(x=ToothGrowth$Length, 
+                                  fill=SupplementType)) + 
+    ggtitle('Distribution of length of tooth growth per supplement') +
+    xlab('Length of growth') +
+    geom_density(alpha=.5) + 
+    geom_vline(color='#00BFC4', linetype=2, size=1, xintercept=
+                   mean((filter(ToothGrowth,
+                                SupplementType=='VC')$Length))) +
+    geom_vline(color='#F8766D', linetype=2, size=1, xintercept=
+                   mean((filter(ToothGrowth,
+                                SupplementType=='OJ')$Length)))
+
+r <- ggplot(data=ToothGrowth, aes(x=ToothGrowth$Length, 
+                                  fill=as.factor(Dose))) + 
+    ggtitle('Distribution of length of tooth growth per dose') +
+    xlab('Length of growth') +
+    geom_density(alpha=.5)
+
+grid.arrange(p,q,r, nrow=3)
+
+```
+
+We can observe the following traits of these distributions:
+
+1. Density of VC treatment has considerably more spread and therefore higher variance.
+2. Density of OJ treatment has 2 maxima (one local, one absolute), which could point at a latent subpopulation contained within the OJ population.
+3. When broken down by dosage, the distributions become separated with their own local maxima, and treatments with 1mg may appear less effective than treatments with 0.5 or 2 mg.
+
+By now the reader must have realized that there is mixed information within the samples, so a more formal framework for decision-making is required. Enter Hypothesis Testing.
+
+# Hypothesis Testing
+
+We'll assume a paired test since **each** of the 10 guinea pigs has been administered **each** of the 6 treatments available in the study and subsequently measured. We'll test confidence intervals and compare 1) by supplement, 2) by dosage, and 3) by dosage of each supplement. Our H0 at all times will be that 
+
+> **The treatment has no effect in tooth growth:** (difference of means is 0)
+
+Therefore, our H1 (or Ha) is
+
+> **The treatment has an effect in tooth growth:** (difference of means is != 0)
+
+## By Supplement
+
+``` {r}
+# OJ supplement
+oj <- filter(ToothGrowth, SupplementType == 'OJ')$Length
+# VC supplement
+vc <- filter(ToothGrowth, SupplementType == 'VC')$Length
+# Test
+tsup <- t.test(oj, vc, paired = T)
+tsup
+```
+
+Since our t-statistic falls within the non-rejection region, and our 95% CI does not contain 0, and moreover, our p-value less than `0.05`, we fail to reject H0 and conclude that **the supplement type does carry an effect in tooth growth**.
+
+## By Dosage
+
+First we test the tooth lengths taken at 0.5mg doses and 1.0mg doses.
+
+``` {r}
+# 0.5mg supplement
+sd <- filter(ToothGrowth, Dose == 0.5)$Length
+# 1mg supplement
+md <- filter(ToothGrowth, Dose == 1.0)$Length
+# 2mg supplement
+ld <- filter(ToothGrowth, Dose == 2.0)$Length
+# Test between 0.5 and 1.0 mg
+tsdmd <- t.test(sd, md, paired = T)
+tsdmd
+```
+
+Just the same as the case with the supplement type, our t-statistic falls within the non-rejection region, and our p-value is even smaller than the previous test. This allows us to fail to reject H0 and conclude that increasing dosage from 0.5mg to 1.0mg does have an effect on tooth growth.
+
+And now to compare increases of 1.0 to 2.0mg
+
+``` {r}
+# Test between 1.0 and 2.0 mg
+tmdld <- t.test(md, ld, paired = T)
+tmdld
+```
+
+An increase in dosage from 1.0 to 2.0 also has an effect on tooth growth, whatever the supplement, apparently.
+
+## By Complete Treatment
+
+We must now create groups for each of the 6 treatments in the study and test them independently of one another.
+
+
+``` {r}
+# Groups
+sdoj <- filter(ToothGrowth, Dose == 0.5 & SupplementType == 'OJ')$Length
+mdoj <- filter(ToothGrowth, Dose == 1.0 & SupplementType == 'OJ')$Length
+ldoj <- filter(ToothGrowth, Dose == 2.0 & SupplementType == 'OJ')$Length
+sdvc <- filter(ToothGrowth, Dose == 0.5 & SupplementType == 'VC')$Length
+mdvc <- filter(ToothGrowth, Dose == 1.0 & SupplementType == 'VC')$Length
+ldvc <- filter(ToothGrowth, Dose == 2.0 & SupplementType == 'VC')$Length
+
+# Test 0.5mg of OJ with 0.5mg of VC
+tsdojsdvc <- t.test(sdoj,sdvc,paired = T)
+tsdojsdvc
+```
+
+We fail to reject H0 and conclude the effect of going from 0.5mg of OJ to the same dose of VC does have an effect.
+
+``` {r}
+# Test 1mg of OJ with 1mg of VC
+tmdojmdvc <- t.test(mdoj,mdvc,paired = T)
+tmdojmdvc
+```
+We also fail to reject H0 and conclude that the effect is present.
+
+``` {r}
+# Test 1mg of OJ with 1mg of VC
+tldojldvc <- t.test(ldoj,ldvc,paired = T)
+tldojldvc
+```
+
+Finally we stumble upon a case where the true difference between the means of the groups is very small, the p-value is higher than 0.05 and the 95% CI contains 0, so we , so it is safe to say that going from a large dose of orange juice to a large dose of vitamin c has little to no effect in tooth growth.
+
+# Conclusions
+Supplement types and dosages have an effect on tooth growth, but up to a point. Going from 0.5mg to 1mg of orange juice has greater effect than the same dose change of VC. However, at large doses, it makes a negligible difference what supplement is administered, since the effect is greatly reduced.
+
