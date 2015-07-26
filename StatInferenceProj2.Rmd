@@ -184,3 +184,5 @@ Finally we stumble upon a case where the true difference between the means of th
 # Conclusions
 Supplement types and dosages have an effect on tooth growth, but up to a point. Going from 0.5mg to 1mg of orange juice has greater effect than the same dose change of VC. However, at large doses, it makes a negligible difference what supplement is administered, since the effect is greatly reduced.
 
+## Assumptions for the above conclusions
+As mentioned earlier, the main assumption for the battery of tests performed is the fact that we're dealing with a paired test, since all 10 guinea pigs have been administered the 6 treatments. We must also assume that they were administered at different times, so we have 6 measurements for each of the 10 subjects. Apart from that, we are establishing the p-value as the most relevant discriminator for assessing effect, and while this may be a risky theoretical framework, we don't have another to rely on yet.
