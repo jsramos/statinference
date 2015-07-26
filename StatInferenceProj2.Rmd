@@ -89,15 +89,15 @@ We can observe the following traits of these distributions:
 
 1. Density of VC treatment has considerably more spread and therefore higher variance.
 2. Density of OJ treatment has 2 maxima (one local, one absolute), which could point at a latent subpopulation contained within the OJ population.
-3. When broken down by dosage, the distributions become separated with their own local maxima, and treatments with 1mg may appear less effective than treatments with 0.5 or 2 mg.
+3. When broken down by dosage, the distributions become separated with their own local maxima, and treatments with 1mg may appear less effective in terms of sample affected than treatments with 0.5 or 2 mg, which have higher concentration of high teeth growth.
 
 By now the reader must have realized that there is mixed information within the samples, so a more formal framework for decision-making is required. Enter Hypothesis Testing.
 
 # Hypothesis Testing
 
-We'll assume a paired test since **each** of the 10 guinea pigs has been administered **each** of the 6 treatments available in the study and subsequently measured. We'll test confidence intervals and compare 1) by supplement, 2) by dosage, and 3) by dosage of each supplement. Our H0 at all times will be that 
+We'll assume a t-test because our sample for each experiment is `n=10`, so it is too small to use the normal distribution. We'll also assume **paired t-tests** since **each** of the 10 guinea pigs has been administered **each** of the 6 treatments available in the study at different times and measured independently. We'll test confidence intervals and compare 1) by supplement, 2) by dosage, and 3) by dosage of each supplement. Our H0 at all times will be that 
 
-> **The treatment has no effect in tooth growth:** (difference of means is 0)
+> **The treatment has no effect in tooth growth:** (difference of means = 0)
 
 Therefore, our H1 (or Ha) is
 
@@ -115,7 +115,7 @@ tsup <- t.test(oj, vc, paired = T)
 tsup
 ```
 
-Since our t-statistic falls within the non-rejection region, and our 95% CI does not contain 0, and moreover, our p-value less than `0.05`, we fail to reject H0 and conclude that **the supplement type does carry an effect in tooth growth**.
+Since our t-statistic falls within the non-rejection region, and our 95% CI does not contain 0, and moreover, our p-value less than `0.05`, we reject H0 and conclude that **the supplement type does carry an effect in tooth growth**.
 
 ## By Dosage
 
@@ -133,7 +133,7 @@ tsdmd <- t.test(sd, md, paired = T)
 tsdmd
 ```
 
-Just the same as the case with the supplement type, our t-statistic falls within the non-rejection region, and our p-value is even smaller than the previous test. This allows us to fail to reject H0 and conclude that increasing dosage from 0.5mg to 1.0mg does have an effect on tooth growth.
+Just the same as the case with the supplement type, our t-statistic falls within the non-rejection region, and our p-value is even smaller than the previous test. This allows us to reject H0 and conclude that increasing dosage from 0.5mg to 1.0mg does have an effect on tooth growth.
 
 And now to compare increases of 1.0 to 2.0mg
 
@@ -143,7 +143,7 @@ tmdld <- t.test(md, ld, paired = T)
 tmdld
 ```
 
-An increase in dosage from 1.0 to 2.0 also has an effect on tooth growth, whatever the supplement, apparently.
+An increase in dosage from 1.0 to 2.0 also has an effect on tooth growth, whatever the supplement, apparently, albeit smaller than the increase from 0.5mg to 1.0mg.
 
 ## By Complete Treatment
 
@@ -164,14 +164,14 @@ tsdojsdvc <- t.test(sdoj,sdvc,paired = T)
 tsdojsdvc
 ```
 
-We fail to reject H0 and conclude the effect of going from 0.5mg of OJ to the same dose of VC does have an effect.
+We reject H0 and conclude the effect of going from 0.5mg of OJ to the same dose of VC does have an effect.
 
 ``` {r}
 # Test 1mg of OJ with 1mg of VC
 tmdojmdvc <- t.test(mdoj,mdvc,paired = T)
 tmdojmdvc
 ```
-We also fail to reject H0 and conclude that the effect is present.
+We also reject H0 and conclude that the effect is present and in favor of VC in the same amount of doses..
 
 ``` {r}
 # Test 1mg of OJ with 1mg of VC
@@ -179,10 +179,10 @@ tldojldvc <- t.test(ldoj,ldvc,paired = T)
 tldojldvc
 ```
 
-Finally we stumble upon a case where the true difference between the means of the groups is very small, the p-value is higher than 0.05 and the 95% CI contains 0, so we , so it is safe to say that going from a large dose of orange juice to a large dose of vitamin c has little to no effect in tooth growth.
+Finally we stumble upon a case where the true difference between the means of the groups is very small, the p-value is higher than 0.05 and the 95% CI contains 0, so it is safe to say that going from a large dose of orange juice to a large dose of vitamin c has little to no effect in tooth growth.
 
 # Conclusions
 Supplement types and dosages have an effect on tooth growth, but up to a point. Going from 0.5mg to 1mg of orange juice has greater effect than the same dose change of VC. However, at large doses, it makes a negligible difference what supplement is administered, since the effect is greatly reduced.
 
 ## Assumptions for the above conclusions
-As mentioned earlier, the main assumption for the battery of tests performed is the fact that we're dealing with a paired test, since all 10 guinea pigs have been administered the 6 treatments. We must also assume that they were administered at different times, so we have 6 measurements for each of the 10 subjects. Apart from that, we are establishing the p-value as the most relevant discriminator for assessing effect, and while this may be a risky theoretical framework, we don't have another to rely on yet.
+As mentioned earlier, the main assumption for the battery of tests performed is the fact that we're dealing with a paired test, since all 10 guinea pigs have been administered the 6 treatments. We must also assume that they were administered at different times, so we have 6 measurements for each of the 10 subjects. Apart from that, we are establishing the p-value as the most relevant discriminator for assessing effect, and while this may be a risky theoretical framework, other approaches have been discouraged for the purpose of this study.
